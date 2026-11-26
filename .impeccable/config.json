@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "italic-serif-display",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-26T08:38:09.157Z",
+        "reason": "Codex review: intentional editorial field-note identity; the Georgia headline matches the magazine-style project framing."
+      },
+      {
+        "rule": "hero-eyebrow-chip",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-26T08:38:09.224Z",
+        "reason": "Codex review: the kicker is a series breadcrumb, Roberto Braga / Field notes / 01, within an editorial field note."
+      }
+    ]
+  }
+}

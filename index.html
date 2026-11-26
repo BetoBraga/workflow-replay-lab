@@ -36,15 +36,17 @@
 <section id="lab" aria-labelledby="lab-title"><header class="section-head"><h2 id="lab-title">What if the same document arrives twice?</h2><span class="mono">01 / Workflow replay</span></header>
 <div class="trace-layout">
 <aside class="controls"><p class="mono muted">Choose a fictional event</p><div class="scenarios" role="group" aria-label="Simulation scenarios">
-<button class="scenario" type="button" data-scenario="valid" aria-pressed="true"><span class="mono">01</span><strong>Valid document</strong></button>
+<button class="scenario" type="button" data-scenario="valid" aria-pressed="false"><span class="mono">01</span><strong>Valid document</strong></button>
 <button class="scenario" type="button" data-scenario="duplicate" aria-pressed="false"><span class="mono">02</span><strong>Duplicate delivery</strong></button>
 <button class="scenario" type="button" data-scenario="missing" aria-pressed="false"><span class="mono">03</span><strong>Missing evidence</strong></button>
 <button class="scenario" type="button" data-scenario="unreadable" aria-pressed="false"><span class="mono">04</span><strong>Unreadable PDF</strong></button>
+<button class="scenario" type="button" data-scenario="recovery" aria-pressed="false"><span class="mono">05</span><strong>Interrupted delivery replay</strong></button>
 </div><p id="description" class="description muted"></p></aside>
 <div class="trace"><div class="trace-caption"><span class="mono muted" id="run-label"></span><span class="outcome mono" id="outcome"></span></div>
 <h3 class="result" id="result" role="status"></h3><div class="counters" id="counters"></div><ol class="timeline" id="timeline" aria-label="Decision trace"></ol>
-<div class="evidence"><details><summary class="mono">Inspect event</summary><pre id="event"></pre></details><details><summary class="mono">Inspect assertions</summary><pre id="assertions"></pre></details></div></div></div>
-<p class="note">Simulation only. Each replay starts with a fresh in-memory registry; the duplicate case starts with the original record in place. No uploads, accounts, API calls or company data.</p>
+<div class="evidence"><details><summary class="mono">Inspect event</summary><pre id="event"></pre></details><details><summary class="mono">Inspect assertions</summary><pre id="assertions"></pre></details><details><summary class="mono">Local ledger</summary><pre id="records"></pre></details></div>
+<div class="counters"><button id="interrupt" class="theme mono" type="button">Interrupt after durable write</button><button id="clear-ledger" class="theme mono" type="button">Clear local ledger</button></div></div></div>
+<p class="note">This is still a lab, not a document-processing or production workflow. Its fictional ledger is saved in this browser’s localStorage. Select a valid event, reload, and replay it to check persistence and idempotency. The interruption control commits first, then drops the acknowledgement so a retry can exercise recovery. Nothing is uploaded or sent to a service.</p>
 <noscript><p class="note">Enable JavaScript to replay the cases. Expected outcomes: a valid document creates one entry; a duplicate creates none; missing evidence or an unreadable PDF goes to review without creating an entry.</p></noscript></section>
 
 <div id="field-notes" class="editions">
@@ -54,30 +56,34 @@
 </div>
 </main>
 <footer><div class="wrap mono">Roberto Braga / After the Update / Field note 01 <span aria-hidden="true">·</span> <a href="https://borerto.com/">borerto.com</a></div></footer>
+<script src="replay-ledger.js"></script>
 <script id="workflow-logic">
 const fixtures = Object.freeze({
  valid:Object.freeze({eventId:'evt-101',documentId:'DOC-042',revision:1,evidence:Object.freeze({page:2,span:'Effective 15 January 2027'})}),
  duplicate:Object.freeze({eventId:'evt-102',documentId:'DOC-042',revision:1,evidence:Object.freeze({page:2,span:'Effective 15 January 2027'})}),
  missing:Object.freeze({eventId:'evt-103',documentId:'DOC-043',revision:1,evidence:Object.freeze({page:2,span:null})}),
- unreadable:Object.freeze({eventId:'evt-104',documentId:'DOC-044',revision:1,parseStatus:'unreadable',evidence:Object.freeze({page:null,span:null})})
+ unreadable:Object.freeze({eventId:'evt-104',documentId:'DOC-044',revision:1,parseStatus:'unreadable',evidence:Object.freeze({page:null,span:null})}),
+ interrupted:Object.freeze({eventId:'evt-105',documentId:'DOC-045',revision:1,evidence:Object.freeze({page:3,span:'Synthetic recovery fixture'})}),
+ recovery:Object.freeze({eventId:'evt-106',documentId:'DOC-045',revision:1,evidence:Object.freeze({page:3,span:'Synthetic recovery fixture'})})
 });
-const businessKey = e => [e.documentId,e.revision].join(':');
-function run(scenario) {
+function run(scenario, storage = window.localStorage, options = {}) {
  if (!Object.hasOwn(fixtures,scenario)) throw new RangeError('Unknown scenario');
  const event=fixtures[scenario];
- const ledger=new Set(scenario==='duplicate'?[businessKey(fixtures.valid)]:[]);
- const key=businessKey(event), before=ledger.size;
- const alreadyRegistered=ledger.has(key);
+ let x;
+ try { x=ReplayLedger.processEvent(storage,event,options); }
+ catch(error) {
+  if(!(error instanceof ReplayLedger.InterruptedAfterCommit)) throw error;
+  x={...error.committed,result:'interrupted'};
+ }
+ const alreadyRegistered=x.result==='duplicate';
  const unreadable=event.parseStatus==='unreadable';
- const sufficientEvidence=!alreadyRegistered && !unreadable && Number.isInteger(event.evidence.page) && event.evidence.page>0 && Boolean(event.evidence.span?.trim());
- const result=alreadyRegistered?'duplicate':sufficientEvidence?'registered':'review';
- if(result==='registered') ledger.add(key);
- return {result,key,before,after:ledger.size,writes:ledger.size-before,reviews:Number(result==='review'),
+ const sufficientEvidence=x.result==='registered'||x.result==='interrupted';
+ return {...x,
  trace:[
  ['Receive event',event.eventId+' · '+event.documentId+' r'+event.revision,'Received'],
- ['Check document and revision',key,alreadyRegistered?'Already registered':'New key'],
+ ['Check document and revision',x.key,alreadyRegistered?'Already registered':'New key'],
  ['Check source evidence',alreadyRegistered?'Existing record retained.':sufficientEvidence?'Page '+event.evidence.page+' · quoted span present.':unreadable?'Parser could not read the fictional PDF.':'Page identified, quoted span absent.',alreadyRegistered?'Skipped':sufficientEvidence?'Present':unreadable?'Unreadable':'Missing'],
- ['Decide',result==='registered'?'One registry record written.':result==='duplicate'?'No write. The original record remains.':'No write. A reviewer must inspect the source.',result==='registered'?'Registered':result==='duplicate'?'No-op':'Review']
+ ['Decide',x.result==='interrupted'?'Record saved but acknowledgement interrupted.':x.result==='registered'?'One durable registry record written.':x.result==='duplicate'?'No write. The original record remains.':'No write. A reviewer must inspect the source.',x.result==='interrupted'?'Interrupted':x.result==='registered'?'Registered':x.result==='duplicate'?'No-op':'Review']
  ]};
 }
 </script>
@@ -86,12 +92,29 @@ const labels={
  valid:['NEW KEY','Registered once.','A document revision with a traceable source span.'],
  duplicate:['REPLAY','No second write.','A different event delivers the same document revision.'],
  missing:['HUMAN REVIEW','Evidence required.','A document revision arrives without a quoted source span.'],
- unreadable:['HUMAN REVIEW','PDF could not be read.','The fixture simulates a parser failure, not actual PDF parsing.']
+ unreadable:['HUMAN REVIEW','PDF could not be read.','The fixture simulates a parser failure, not actual PDF parsing.'],
+ recovery:['REPLAY','No second write.','Retry the same document revision after its original acknowledgement was interrupted.']
 };
 const byId=id=>document.getElementById(id);
 const buttons=[...document.querySelectorAll('.scenario')];
-function view(scenario){
- const x=run(scenario), y=labels[scenario];
+function notConfirmed(error, heading='Saved state needs attention.'){
+ for(const button of buttons)button.setAttribute('aria-pressed','false');
+ byId('run-label').textContent='No run confirmed';
+ byId('result').textContent=heading; byId('outcome').textContent='NOT CONFIRMED';
+ byId('description').textContent=error.message; byId('timeline').replaceChildren();
+ byId('counters').replaceChildren(); byId('event').textContent='';
+ byId('assertions').textContent=''; byId('records').textContent='Ledger unavailable; no change was confirmed.';
+}
+function view(scenario,options={}){
+ let x, y;
+ try { x=run(scenario,window.localStorage,options); }
+ catch(error) { notConfirmed(error); return; }
+ if(x.result==='interrupted') y=['RECOVERY REQUIRED','Write saved; acknowledgement interrupted.','Reload, then choose Interrupted delivery replay to verify the existing record.'];
+ else if(x.result==='duplicate' && scenario==='interrupted') y=['NO NEW FAILURE','An earlier commit already exists.','No new interrupted write was created.'];
+ else if(x.result==='duplicate') y=['REPLAY','No second write.','This document revision already has a saved record.'];
+ else if(x.result==='registered' && (scenario==='duplicate' || scenario==='recovery')) y=['FIRST DELIVERY','No earlier record exists.','This event is the first observed delivery of this document revision.'];
+ else if(x.result==='registered') y=labels.valid;
+ else y=labels[scenario];
  for(const b of buttons)b.setAttribute('aria-pressed',String(b.dataset.scenario===scenario));
  byId('description').textContent=y[2];
  byId('run-label').textContent='Replay / '+fixtures[scenario].eventId;
@@ -105,15 +128,38 @@ function view(scenario){
   idx.className='idx mono';idx.textContent=String(i+1).padStart(2,'0');strong.textContent=name;small.textContent=detail;description.append(strong,small);st.className='state mono';st.textContent=state;li.append(idx,description,st);return li;
  }));
  byId('event').textContent=JSON.stringify(fixtures[scenario],null,2);
- byId('assertions').textContent=scenario==='valid'?'result === "registered"\nwrites === 1\nreviews === 0':scenario==='duplicate'?'result === "duplicate"\nwrites === 0\nrecordCountBefore === recordCountAfter':'result === "review"\nwrites === 0\nreviews === 1';
+ byId('assertions').textContent=[
+  'result === '+JSON.stringify(x.result),
+  'writes === '+x.writes,
+  'reviews === '+x.reviews,
+  'recordCountBefore === '+x.before,
+  'recordCountAfter === '+x.after
+ ].join('\n');
+ byId('records').textContent=JSON.stringify(x.records,null,2);
 }
 for(const b of buttons)b.addEventListener('click',()=>view(b.dataset.scenario));
+byId('interrupt').addEventListener('click',()=>view('interrupted',{interruptAfterCommit:true}));
+byId('clear-ledger').addEventListener('click',()=>{
+ if(window.confirm('Clear this browser’s local demonstration ledger?')) {
+  try { window.localStorage.removeItem(ReplayLedger.STORAGE_KEY); }
+  catch(error) { notConfirmed(error,'The local ledger could not be cleared.'); return; }
+  for(const b of buttons)b.setAttribute('aria-pressed','false');
+  byId('run-label').textContent='Ready / no event processed'; byId('outcome').textContent='READY';
+  byId('result').textContent='Choose a fictional event to run.'; byId('description').textContent='Events are written only after you select one.';
+  byId('timeline').replaceChildren(); byId('counters').replaceChildren(); byId('event').textContent=''; byId('assertions').textContent=''; byId('records').textContent='[]';
+ }
+});
 const theme=byId('theme'); theme.addEventListener('click',()=>{
  const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
  document.documentElement.dataset.theme=next;
  theme.textContent=next==='dark'?'Light mode':'Dark mode';
 });
-view('valid');
+byId('run-label').textContent='Ready / no event processed';
+byId('outcome').textContent='READY';
+byId('result').textContent='Choose a fictional event to run.';
+byId('description').textContent='Events are written only after you select one.';
+try { byId('records').textContent=JSON.stringify(ReplayLedger.readRecords(window.localStorage),null,2); }
+catch(error) { byId('outcome').textContent='NOT CONFIRMED'; byId('description').textContent=error.message; }
 </script>
 </body>
 </html>
