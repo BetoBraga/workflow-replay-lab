@@ -57,7 +57,7 @@ test('a different delivery ID cannot write the same document revision twice', ()
   assert.equal(replay.records[0].eventId, fixtures.valid.eventId);
 });
 
-test('saved record survives a process restart and the replay is a no-op', t => {
+test('saved record survives re-opening the file-backed adapter and the replay is a no-op', t => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'replay-ledger-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   assert.equal(run('valid', fileStorage(directory)).result, 'registered');
@@ -90,4 +90,78 @@ test('both inline scripts parse and no remote assets or automatic requests are u
   scripts.forEach(source => new vm.Script(source));
   assert.match(html, /<script src="replay-ledger\.js"><\/script>/);
   assert.doesNotMatch(html, /<img\b[^>]*\bsrc="https?:|<link\b[^>]*href="https?:|\bfetch\s*\(/);
+});
+
+
+test('synthetic inconsistent or repeated saved keys never suppress a valid delivery', () => {
+  const valid = { ...fixtures.valid, key: ledger.businessKey(fixtures.valid), page: 2, span: 'Synthetic span' };
+  for (const records of [
+    [{ ...valid, documentId: 'WRONG-DOCUMENT' }], [valid, valid], [{ ...valid, span: '' }],
+  ]) {
+    const raw = JSON.stringify({ version: 1, records });
+    const storage = memoryStorage(raw);
+    assert.throws(() => run('valid', storage), /left untouched/);
+    assert.equal(storage.getItem(ledger.STORAGE_KEY), raw);
+  }
+});
+
+function mockPage(storage) {
+  const makeElement = () => ({
+    handlers: {}, dataset: {}, textContent: '', append() {},
+    addEventListener(name, cb) { this.handlers[name] = cb; },
+    replaceChildren() {}, setAttribute() {},
+  });
+  const elements = new Map();
+  const get = id => {
+    if (!elements.has(id)) elements.set(id, makeElement());
+    return elements.get(id);
+  };
+  const buttons = ['valid', 'duplicate', 'missing', 'unreadable', 'recovery'].map(name => {
+    const el = get(name); el.dataset.scenario = name; return el;
+  });
+  const document = {
+    getElementById: get, querySelectorAll: () => buttons,
+    createElement: makeElement, documentElement: makeElement(),
+  };
+  vm.runInNewContext(scripts.join('\n'), {
+    ReplayLedger: ledger, document, window: { localStorage: storage, confirm: () => true },
+  });
+  return { click: name => get(name).handlers.click(), text: name => get(name).textContent };
+}
+
+test('assertions reflect a first delivery and a replay regardless of control label', () => {
+  const page = mockPage(memoryStorage());
+  page.click('duplicate');
+  assert.match(page.text('assertions'), /result === "registered"/);
+  assert.match(page.text('assertions'), /writes === 1/);
+  page.click('valid');
+  assert.match(page.text('assertions'), /result === "duplicate"/);
+  assert.match(page.text('assertions'), /writes === 0/);
+});
+
+test('interrupt renders the current event and committed record without an unguarded re-read', () => {
+  const inner = memoryStorage();
+  let written = false;
+  const page = mockPage({
+    getItem(key) {
+      if (written) throw new Error('late read denied');
+      return inner.getItem(key);
+    },
+    setItem(key, value) { inner.setItem(key, value); written = true; },
+  });
+  page.click('interrupt');
+  assert.equal(page.text('outcome'), 'RECOVERY REQUIRED');
+  assert.match(page.text('event'), /evt-105/);
+  assert.match(page.text('assertions'), /result === "interrupted"/);
+  assert.match(page.text('records'), /DOC-045/);
+});
+
+test('a denied clear is reported and does not masquerade as a reset', () => {
+  const raw = JSON.stringify({ version: 1, records: [] });
+  const storage = { ...memoryStorage(raw), removeItem() { throw new Error('clear denied'); } };
+  const page = mockPage(storage);
+  page.click('clear-ledger');
+  assert.equal(page.text('outcome'), 'NOT CONFIRMED');
+  assert.match(page.text('description'), /clear denied/);
+  assert.equal(storage.getItem(ledger.STORAGE_KEY), raw);
 });

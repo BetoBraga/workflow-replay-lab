@@ -1,10 +1,10 @@
 # After the Update · Workflow Replay Lab
 
-**What if the same document arrives twice?** Run four fictional events and inspect the decision trace, source evidence, and saved ledger. The lab demonstrates local persistence, idempotent replay, and recovery after a committed write loses its acknowledgement. It is still a prototype for comparing reliability rules, not a production document workflow.
+**What if the same document arrives twice?** Run fictional events and inspect the decision trace, source evidence, and saved ledger. The lab demonstrates local persistence, idempotent replay, and recovery after a committed write loses its acknowledgement. It is still a prototype for comparing reliability rules, not a production document workflow.
 
 ## Run it
 
-Run `node --test tests/replay.test.cjs` to check the decision and recovery rules. For a stable browser storage origin, start `python -m http.server 8000` in the repository root and open `http://localhost:8000/`. This uses only Python's standard library and Node.js; the page makes no network requests. Its only stored data is the fictional event ledger in this browser's `localStorage` for this local origin.
+Run `node --test tests/replay.test.cjs` to check the decision and recovery rules. For a stable browser storage origin, start `python -m http.server 8000` in the repository root and open `http://localhost:8000/`. This uses only Python's standard library and Node.js; the page only loads its same-origin static files and makes no external requests. Its only stored data is the fictional event ledger in this browser's `localStorage` for this local origin.
 
 | Case | Input | Try it | Expected | Diagnose a mismatch |
 | --- | --- | --- | --- | --- |
@@ -22,7 +22,7 @@ To exercise failure recovery, select **Interrupt after durable write**. The lab 
 
 Use a test tenant and a disposable target. Start with a manual trigger and the two fixtures for valid and duplicate events. Map the document ID and revision to a normalized key and inspect that key before requesting a write. In a production design, enforce uniqueness at the durable write boundary and test simultaneous deliveries. Then add separate branches for a parse failure and insufficient source evidence before the write step. Route both to human review with distinct reason codes and hold the registry write. Use connector-specific licensing and permission checks in your own tenant.
 
-**Validation status:** Node tests cover a file-backed restart, duplicate delivery, malformed saved state, and an interruption after the shared ledger code commits. The local browser smoke check also confirmed that the browser ledger survives reload, duplicate and interrupted replays add no second record, and the explicit clear action removes only the lab ledger. No Copilot Studio or Power Automate tenant run is claimed. This does not use exported company flows or records.
+**Validation status:** Node tests cover re-opening the file-backed adapter, duplicate delivery, malformed saved state, UI decisions, and an interruption after the shared ledger code commits. The local browser smoke check also confirmed that the browser ledger survives reload, duplicate and interrupted replays add no second record, and the explicit clear action removes only the lab ledger. No Copilot Studio or Power Automate tenant run is claimed. This does not use exported company flows or records.
 
 ## Tests
 

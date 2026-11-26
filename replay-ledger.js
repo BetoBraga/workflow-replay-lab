@@ -7,10 +7,11 @@
   const STORAGE_KEY = 'after-the-update:ledger:v1';
 
   class InterruptedAfterCommit extends Error {
-    constructor(key) {
+    constructor(key, committed) {
       super('The durable write completed before acknowledgement was interrupted.');
       this.name = 'InterruptedAfterCommit';
       this.key = key;
+      this.committed = committed;
     }
   }
 
@@ -27,11 +28,18 @@
     } catch {
       throw new Error('Saved ledger data is unreadable. It was left untouched.');
     }
+    const keys = new Set();
     if (
       !parsed || parsed.version !== 1 || !Array.isArray(parsed.records) ||
-      parsed.records.some(record => !record || typeof record.key !== 'string' ||
-        typeof record.eventId !== 'string' || typeof record.documentId !== 'string' ||
-        !Number.isInteger(record.revision))
+      parsed.records.some(record => {
+        if (!record || typeof record.eventId !== 'string' ||
+            typeof record.documentId !== 'string' || !Number.isInteger(record.revision) ||
+            record.key !== businessKey(record) || keys.has(record.key) ||
+            !Number.isInteger(record.page) || record.page < 1 ||
+            typeof record.span !== 'string' || !record.span.trim()) return true;
+        keys.add(record.key);
+        return false;
+      })
     ) {
       throw new Error('Saved ledger data has an unsupported shape. It was left untouched.');
     }
@@ -63,8 +71,9 @@
     };
     const next = [...records, record];
     storage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, records: next }));
-    if (options.interruptAfterCommit) throw new InterruptedAfterCommit(key);
-    return { result: 'registered', key, before: records.length, after: next.length, writes: 1, reviews: 0, records: next };
+    const committed = { result: 'registered', key, before: records.length, after: next.length, writes: 1, reviews: 0, records: next };
+    if (options.interruptAfterCommit) throw new InterruptedAfterCommit(key, committed);
+    return committed;
   }
 
   return { STORAGE_KEY, InterruptedAfterCommit, businessKey, readRecords, processEvent };

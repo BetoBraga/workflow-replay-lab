@@ -69,16 +69,21 @@ const fixtures = Object.freeze({
 function run(scenario, storage = window.localStorage, options = {}) {
  if (!Object.hasOwn(fixtures,scenario)) throw new RangeError('Unknown scenario');
  const event=fixtures[scenario];
- const x=ReplayLedger.processEvent(storage,event,options);
+ let x;
+ try { x=ReplayLedger.processEvent(storage,event,options); }
+ catch(error) {
+  if(!(error instanceof ReplayLedger.InterruptedAfterCommit)) throw error;
+  x={...error.committed,result:'interrupted'};
+ }
  const alreadyRegistered=x.result==='duplicate';
  const unreadable=event.parseStatus==='unreadable';
- const sufficientEvidence=x.result==='registered';
+ const sufficientEvidence=x.result==='registered'||x.result==='interrupted';
  return {...x,
  trace:[
  ['Receive event',event.eventId+' · '+event.documentId+' r'+event.revision,'Received'],
  ['Check document and revision',x.key,alreadyRegistered?'Already registered':'New key'],
  ['Check source evidence',alreadyRegistered?'Existing record retained.':sufficientEvidence?'Page '+event.evidence.page+' · quoted span present.':unreadable?'Parser could not read the fictional PDF.':'Page identified, quoted span absent.',alreadyRegistered?'Skipped':sufficientEvidence?'Present':unreadable?'Unreadable':'Missing'],
- ['Decide',x.result==='registered'?'One durable registry record written.':x.result==='duplicate'?'No write. The original record remains.':'No write. A reviewer must inspect the source.',x.result==='registered'?'Registered':x.result==='duplicate'?'No-op':'Review']
+ ['Decide',x.result==='interrupted'?'Record saved but acknowledgement interrupted.':x.result==='registered'?'One durable registry record written.':x.result==='duplicate'?'No write. The original record remains.':'No write. A reviewer must inspect the source.',x.result==='interrupted'?'Interrupted':x.result==='registered'?'Registered':x.result==='duplicate'?'No-op':'Review']
  ]};
 }
 </script>
@@ -92,11 +97,21 @@ const labels={
 };
 const byId=id=>document.getElementById(id);
 const buttons=[...document.querySelectorAll('.scenario')];
-function view(scenario){
+function notConfirmed(error, heading='Saved state needs attention.'){
+ for(const button of buttons)button.setAttribute('aria-pressed','false');
+ byId('run-label').textContent='No run confirmed';
+ byId('result').textContent=heading; byId('outcome').textContent='NOT CONFIRMED';
+ byId('description').textContent=error.message; byId('timeline').replaceChildren();
+ byId('counters').replaceChildren(); byId('event').textContent='';
+ byId('assertions').textContent=''; byId('records').textContent='Ledger unavailable; no change was confirmed.';
+}
+function view(scenario,options={}){
  let x, y;
- try { x=run(scenario); }
- catch(error) { byId('result').textContent='Saved state needs attention.'; byId('outcome').textContent='NOT CONFIRMED'; byId('description').textContent=error.message; byId('timeline').replaceChildren(); byId('counters').replaceChildren(); byId('event').textContent=''; byId('assertions').textContent=''; byId('records').textContent='Ledger unavailable; no write was confirmed.'; return; }
- if(x.result==='duplicate') y=['REPLAY','No second write.','This document revision already has a saved record.'];
+ try { x=run(scenario,window.localStorage,options); }
+ catch(error) { notConfirmed(error); return; }
+ if(x.result==='interrupted') y=['RECOVERY REQUIRED','Write saved; acknowledgement interrupted.','Reload, then choose Interrupted delivery replay to verify the existing record.'];
+ else if(x.result==='duplicate' && scenario==='interrupted') y=['NO NEW FAILURE','An earlier commit already exists.','No new interrupted write was created.'];
+ else if(x.result==='duplicate') y=['REPLAY','No second write.','This document revision already has a saved record.'];
  else if(x.result==='registered' && (scenario==='duplicate' || scenario==='recovery')) y=['FIRST DELIVERY','No earlier record exists.','This event is the first observed delivery of this document revision.'];
  else if(x.result==='registered') y=labels.valid;
  else y=labels[scenario];
@@ -113,31 +128,21 @@ function view(scenario){
   idx.className='idx mono';idx.textContent=String(i+1).padStart(2,'0');strong.textContent=name;small.textContent=detail;description.append(strong,small);st.className='state mono';st.textContent=state;li.append(idx,description,st);return li;
  }));
  byId('event').textContent=JSON.stringify(fixtures[scenario],null,2);
- byId('assertions').textContent=scenario==='valid'?'result === "registered" (first delivery)\nwrites === 1\nrecords persist after reload':scenario==='duplicate'?'result === "duplicate" after valid is saved\nwrites === 0\noriginal event remains':scenario==='recovery'&&x.result==='duplicate'?'result === "duplicate" after interrupted commit\nwrites === 0\noriginal event remains':scenario==='recovery'?'no prior commit found\nfirst delivery writes once':'result === "review"\nwrites === 0\nreviews === 1';
+ byId('assertions').textContent=[
+  'result === '+JSON.stringify(x.result),
+  'writes === '+x.writes,
+  'reviews === '+x.reviews,
+  'recordCountBefore === '+x.before,
+  'recordCountAfter === '+x.after
+ ].join('\n');
  byId('records').textContent=JSON.stringify(x.records,null,2);
 }
 for(const b of buttons)b.addEventListener('click',()=>view(b.dataset.scenario));
-byId('interrupt').addEventListener('click',()=>{
- let interrupted=false;
- try { run('interrupted',window.localStorage,{interruptAfterCommit:true}); }
- catch(error) {
-  if(error.name==='InterruptedAfterCommit') interrupted=true;
-  else { byId('result').textContent='Write could not be confirmed.'; byId('outcome').textContent='NOT CONFIRMED'; byId('description').textContent=error.message; byId('records').textContent='Ledger unavailable; no successful write is claimed.'; return; }
- }
- if(interrupted) {
-  byId('result').textContent='Write saved; acknowledgement interrupted.';
-  byId('outcome').textContent='RECOVERY REQUIRED';
-  byId('description').textContent='Reload this page, then choose “Interrupted delivery replay”. Its persisted business key should produce a no-op.';
- } else {
-  byId('result').textContent='An earlier commit already exists.';
-  byId('outcome').textContent='NO NEW FAILURE';
-  byId('description').textContent='No new interrupted write was created. Replay the existing record if you are checking idempotency.';
- }
- byId('records').textContent=JSON.stringify(ReplayLedger.readRecords(window.localStorage),null,2);
-});
+byId('interrupt').addEventListener('click',()=>view('interrupted',{interruptAfterCommit:true}));
 byId('clear-ledger').addEventListener('click',()=>{
  if(window.confirm('Clear this browser’s local demonstration ledger?')) {
-  window.localStorage.removeItem(ReplayLedger.STORAGE_KEY);
+  try { window.localStorage.removeItem(ReplayLedger.STORAGE_KEY); }
+  catch(error) { notConfirmed(error,'The local ledger could not be cleared.'); return; }
   for(const b of buttons)b.setAttribute('aria-pressed','false');
   byId('run-label').textContent='Ready / no event processed'; byId('outcome').textContent='READY';
   byId('result').textContent='Choose a fictional event to run.'; byId('description').textContent='Events are written only after you select one.';
