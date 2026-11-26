@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>After the Update · Roberto Braga</title>
+<style>
+:root{color-scheme:dark;--bg:#141110;--paper:#1f1917;--paper-2:#27201d;--ink:#f3ece0;--mute:#baaa9d;--line:#544338;--amber:#f0b63d;--purple:#c8ade9;--green:#b1ca9e;--shadow:#0b0807}
+:root[data-theme=light]{color-scheme:light;--bg:#f4ece3;--paper:#fffbf4;--paper-2:#eee2d7;--ink:#231a16;--mute:#645346;--line:#b5a394;--amber:#734900;--purple:#673e88;--green:#34592c;--shadow:#cabbac}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}button{font:inherit}a{color:var(--amber);text-underline-offset:.25em}a:hover{text-decoration-thickness:2px}:focus-visible{outline:2px solid var(--amber);outline-offset:4px}h1,h2,h3,p{margin:0}.wrap{width:min(1180px,calc(100% - 64px));margin:auto}.mono{font:650 .71rem/1.45 ui-monospace,monospace;letter-spacing:.105em;text-transform:uppercase}.muted{color:var(--mute)}.skip{position:absolute;left:12px;top:-80px;padding:10px;background:var(--paper);z-index:9}.skip:focus{top:8px}.top{border-bottom:1px solid var(--line)}.top .wrap{min-height:67px;display:flex;justify-content:space-between;align-items:center;gap:20px}.brand{font:800 1.4rem/1 system-ui;color:var(--ink);text-decoration:none}.brand span{color:var(--amber)}.top nav{display:flex;align-items:center;gap:22px}.top nav a{color:var(--mute);text-decoration:none}.theme{cursor:pointer;background:var(--paper);color:var(--ink);border:1px solid var(--line);padding:7px 10px}.hero{display:grid;grid-template-columns:1.35fr .85fr;align-items:center;gap:44px;padding:63px 0 47px}.hero .kicker{color:var(--amber);margin-bottom:20px}.hero h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(3rem,7.4vw,7rem);letter-spacing:-.085em;line-height:.85}.hero h1 em{font-weight:400;color:var(--amber)}.hero .lede{margin:25px 0 12px;font-weight:650;font-size:clamp(1.08rem,2vw,1.36rem);letter-spacing:-.025em}.hero .intro{max-width:45ch;color:var(--mute)}.hero .start{display:inline-block;margin-top:22px}.art{position:relative;margin:0;padding:22px;border:1px solid var(--line);background:var(--paper)}.art::before,.art::after{content:"";position:absolute;width:15px;height:15px;border:solid var(--amber)}.art::before{top:10px;left:10px;border-width:1px 0 0 1px}.art::after{bottom:10px;right:10px;border-width:0 1px 1px 0}.art svg{display:block;width:100%;height:auto}.art figcaption{margin-top:5px;color:var(--mute);text-align:center}.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:18px;border-top:1px solid var(--line);padding:25px 0 20px}.section-head h2{font:400 clamp(1.7rem,4vw,2.6rem)/1.04 Georgia,serif;letter-spacing:-.04em}.section-head .mono{color:var(--amber)}.trace-layout{display:grid;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr);border:1px solid var(--line);background:var(--paper);box-shadow:8px 8px 0 var(--shadow)}.controls{padding:22px;border-right:1px solid var(--line)}.controls>p{margin-bottom:12px}.scenarios{display:grid;gap:7px}.scenario{display:flex;text-align:left;align-items:baseline;gap:10px;width:100%;cursor:pointer;padding:10px 11px;border:1px solid var(--line);color:var(--ink);background:transparent}.scenario span{color:var(--amber)}.scenario[aria-pressed=true]{border-color:var(--amber);background:var(--paper-2);box-shadow:inset 2px 0 var(--amber)}.scenario:hover{background:var(--paper-2)}.controls .description{margin:15px 0 0;font-size:.88rem;min-height:4em}.trace{padding:22px;min-width:0}.trace-caption{display:flex;align-items:baseline;gap:10px;justify-content:space-between;flex-wrap:wrap}.outcome{color:var(--green)}.outcome[data-result=duplicate]{color:var(--amber)}.outcome[data-result=review]{color:var(--purple)}.result{margin-top:5px;font:400 clamp(1.55rem,4vw,2.15rem)/1.12 Georgia,serif;letter-spacing:-.035em}.counters{display:flex;flex-wrap:wrap;gap:8px 14px;margin:13px 0}.counter{border:1px solid var(--line);padding:4px 7px;color:var(--mute)}.counter b{color:var(--ink)}.timeline{list-style:none;margin:0;padding:0}.timeline li{display:grid;grid-template-columns:2rem minmax(0,1fr) auto;gap:10px;align-items:baseline;border-top:1px solid var(--line);padding:8px 0}.timeline li:last-child{border-bottom:1px solid var(--line)}.timeline small{display:block;color:var(--mute);font-size:.82rem}.timeline .idx{color:var(--amber)}.timeline .state{color:var(--purple)}.evidence{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.evidence details{min-width:0;border:1px solid var(--line);padding:7px 10px}.evidence summary{cursor:pointer;color:var(--ink)}pre{max-height:18rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.76rem;color:var(--amber);margin:8px 0 2px}.note{font-size:.87rem;color:var(--mute);margin-top:17px}.editions{border-top:1px solid var(--line);margin-top:48px;padding-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.editions section{min-width:0}.editions h2{font:400 1.6rem Georgia,serif;margin:5px 0 8px}.editions p{color:var(--mute);font-size:.9rem;margin-bottom:8px}footer{margin-top:37px;border-top:1px solid var(--line);padding:19px 0 27px;color:var(--mute)}
+@media(max-width:820px){.wrap{width:calc(100% - 36px)}.hero{gap:24px;padding-top:47px}.trace-layout{grid-template-columns:1fr}.controls{border-right:0;border-bottom:1px solid var(--line)}.scenarios{grid-template-columns:repeat(2,minmax(0,1fr))}.scenario{flex-direction:column;gap:4px;line-height:1.25}.controls .description{min-height:0}}
+@media(max-width:550px){.top nav{gap:12px}.top nav a{display:none}.hero{grid-template-columns:1fr;gap:20px;padding:34px 0 26px}.hero h1{font-size:clamp(3.6rem,14vw,5rem)}.hero .lede{margin-top:17px}.art{max-width:370px;padding:15px 19px}.art svg{max-height:107px}.section-head{display:block;padding:19px 0 14px}.section-head .mono{display:block;margin-top:7px}.controls,.trace{padding:13px}.trace-layout{box-shadow:4px 4px 0 var(--shadow)}.scenario{padding:8px 6px;font-size:.86rem}.timeline li{grid-template-columns:1.5rem minmax(0,1fr);gap:5px}.timeline .state{grid-column:2}.evidence,.editions{grid-template-columns:1fr}.editions{gap:18px;margin-top:32px}}
+</style>
+</head>
+<body>
+<a class="skip" href="#lab">Skip to the experiment</a>
+<header class="top"><div class="wrap"><a class="brand" href="#top" aria-label="Back to top">rb<span>.</span></a><nav aria-label="Main"><a class="mono" href="#lab">Experiment</a><a class="mono" href="#field-notes">Field notes</a><button type="button" id="theme" class="theme mono">Light mode</button></nav></div></header>
+<main id="top" class="wrap">
+<section class="hero" aria-labelledby="title"><div><p class="kicker mono">Roberto Braga / Field notes / 01</p>
+<h1 id="title">After the <em>update.</em></h1>
+<p class="lede">What changes when the model changes?</p>
+<p class="intro">I work on LLM evaluation and service automation. This field note looks at the decisions that keep a workflow reliable when the happy path ends.</p>
+<a class="start mono" href="#lab">Run the experiment ↓</a></div>
+<figure class="art"><svg viewBox="0 0 420 150" role="img" aria-labelledby="art-title"><title id="art-title">Conceptual traces showing retained and changed behavior after an update.</title>
+<path d="M12 24H407V120H12ZM12 56H407M12 88H407M77 24v96m65-96v96m65-96v96m65-96v96m65-96v96" fill="none" stroke="var(--line)"/>
+<rect x="196" y="24" width="21" height="96" fill="var(--paper-2)"/>
+<path d="M207 24V120" stroke="var(--mute)" stroke-dasharray="3 5"/>
+<path d="M22 99C54 99 75 67 108 67S168 87 207 71s42-16 68-16 41 11 64 11 35-13 58-13" fill="none" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+<path d="M207 71c24-4 42 28 71 28s36-10 59-8 33 14 60 16" fill="none" stroke="var(--purple)" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 6"/>
+<circle cx="207" cy="71" r="5" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/>
+<g fill="var(--mute)" font-family="monospace" font-size="12" letter-spacing="1"><text x="207" y="15" text-anchor="middle">UPDATE</text><text x="41" y="145">RETAINED</text><text x="151" y="145">CHANGED</text></g>
+<path d="M15 141h19" stroke="var(--amber)" stroke-width="3"/><path d="M124 141h19" stroke="var(--purple)" stroke-width="3" stroke-dasharray="4 3"/></svg>
+<figcaption class="mono">Conceptual illustration · Not benchmark data</figcaption></figure></section>
+
+<section id="lab" aria-labelledby="lab-title"><header class="section-head"><h2 id="lab-title">What if the same document arrives twice?</h2><span class="mono">01 / Workflow replay</span></header>
+<div class="trace-layout">
+<aside class="controls"><p class="mono muted">Choose a fictional event</p><div class="scenarios" role="group" aria-label="Simulation scenarios">
+<button class="scenario" type="button" data-scenario="valid" aria-pressed="true"><span class="mono">01</span><strong>Valid document</strong></button>
+<button class="scenario" type="button" data-scenario="duplicate" aria-pressed="false"><span class="mono">02</span><strong>Duplicate delivery</strong></button>
+<button class="scenario" type="button" data-scenario="missing" aria-pressed="false"><span class="mono">03</span><strong>Missing evidence</strong></button>
+<button class="scenario" type="button" data-scenario="unreadable" aria-pressed="false"><span class="mono">04</span><strong>Unreadable PDF</strong></button>
+</div><p id="description" class="description muted"></p></aside>
+<div class="trace"><div class="trace-caption"><span class="mono muted" id="run-label"></span><span class="outcome mono" id="outcome"></span></div>
+<h3 class="result" id="result" role="status"></h3><div class="counters" id="counters"></div><ol class="timeline" id="timeline" aria-label="Decision trace"></ol>
+<div class="evidence"><details><summary class="mono">Inspect event</summary><pre id="event"></pre></details><details><summary class="mono">Inspect assertions</summary><pre id="assertions"></pre></details></div></div></div>
+<p class="note">Simulation only. Each replay starts with a fresh in-memory registry; the duplicate case starts with the original record in place. No uploads, accounts, API calls or company data.</p>
+<noscript><p class="note">Enable JavaScript to replay the cases. Expected outcomes: a valid document creates one entry; a duplicate creates none; missing evidence or an unreadable PDF goes to review without creating an entry.</p></noscript></section>
+
+<div id="field-notes" class="editions">
+<section><p class="mono">01 / Build</p><h2>Selected work</h2><p>Two ways into the work: model behavior and applied computer vision.</p><a href="https://github.com/BetoBraga/continualkit">ContinualKit ↗</a> <span class="muted">· early-stage research</span><br><a href="https://github.com/BetoBraga/eagle-eye">EagleEye ↗</a></section>
+<section><p class="mono">02 / Read</p><h2>Field note</h2><p>A delivery ID describes a message. A document ID and revision describe the work you intend to do once. This replay separates the two.</p><p>Missing source evidence goes to review before a registry write. A production implementation would also need a transactional uniqueness constraint and concurrent-delivery tests.</p></section>
+<section><p class="mono">03 / Collaborate</p><h2>Try an edge case</h2><p>Would a new revision count as a duplicate in your workflow? Start with a minimal fictional event, expected outcome and the decision your rule makes.</p><a href="https://github.com/BetoBraga">See Roberto’s GitHub ↗</a></section>
+</div>
+</main>
+<footer><div class="wrap mono">Roberto Braga / After the Update / Field note 01 <span aria-hidden="true">·</span> <a href="https://borerto.com/">borerto.com</a></div></footer>
+<script id="workflow-logic">
+const fixtures = Object.freeze({
+ valid:Object.freeze({eventId:'evt-101',documentId:'DOC-042',revision:1,evidence:Object.freeze({page:2,span:'Effective 15 January 2027'})}),
+ duplicate:Object.freeze({eventId:'evt-102',documentId:'DOC-042',revision:1,evidence:Object.freeze({page:2,span:'Effective 15 January 2027'})}),
+ missing:Object.freeze({eventId:'evt-103',documentId:'DOC-043',revision:1,evidence:Object.freeze({page:2,span:null})}),
+ unreadable:Object.freeze({eventId:'evt-104',documentId:'DOC-044',revision:1,parseStatus:'unreadable',evidence:Object.freeze({page:null,span:null})})
+});
+const businessKey = e => [e.documentId,e.revision].join(':');
+function run(scenario) {
+ if (!Object.hasOwn(fixtures,scenario)) throw new RangeError('Unknown scenario');
+ const event=fixtures[scenario];
+ const ledger=new Set(scenario==='duplicate'?[businessKey(fixtures.valid)]:[]);
+ const key=businessKey(event), before=ledger.size;
+ const alreadyRegistered=ledger.has(key);
+ const unreadable=event.parseStatus==='unreadable';
+ const sufficientEvidence=!alreadyRegistered && !unreadable && Number.isInteger(event.evidence.page) && event.evidence.page>0 && Boolean(event.evidence.span?.trim());
+ const result=alreadyRegistered?'duplicate':sufficientEvidence?'registered':'review';
+ if(result==='registered') ledger.add(key);
+ return {result,key,before,after:ledger.size,writes:ledger.size-before,reviews:Number(result==='review'),
+ trace:[
+ ['Receive event',event.eventId+' · '+event.documentId+' r'+event.revision,'Received'],
+ ['Check document and revision',key,alreadyRegistered?'Already registered':'New key'],
+ ['Check source evidence',alreadyRegistered?'Existing record retained.':sufficientEvidence?'Page '+event.evidence.page+' · quoted span present.':unreadable?'Parser could not read the fictional PDF.':'Page identified, quoted span absent.',alreadyRegistered?'Skipped':sufficientEvidence?'Present':unreadable?'Unreadable':'Missing'],
+ ['Decide',result==='registered'?'One registry record written.':result==='duplicate'?'No write. The original record remains.':'No write. A reviewer must inspect the source.',result==='registered'?'Registered':result==='duplicate'?'No-op':'Review']
+ ]};
+}
+</script>
+<script id="view">
+const labels={
+ valid:['NEW KEY','Registered once.','A document revision with a traceable source span.'],
+ duplicate:['REPLAY','No second write.','A different event delivers the same document revision.'],
+ missing:['HUMAN REVIEW','Evidence required.','A document revision arrives without a quoted source span.'],
+ unreadable:['HUMAN REVIEW','PDF could not be read.','The fixture simulates a parser failure, not actual PDF parsing.']
+};
+const byId=id=>document.getElementById(id);
+const buttons=[...document.querySelectorAll('.scenario')];
+function view(scenario){
+ const x=run(scenario), y=labels[scenario];
+ for(const b of buttons)b.setAttribute('aria-pressed',String(b.dataset.scenario===scenario));
+ byId('description').textContent=y[2];
+ byId('run-label').textContent='Replay / '+fixtures[scenario].eventId;
+ byId('outcome').textContent=y[0]; byId('outcome').dataset.result=x.result;
+ byId('result').textContent=y[1];
+ byId('counters').replaceChildren(...[['Registry writes',x.writes],['Review tasks',x.reviews],['Records',x.before+' → '+x.after]].map(([k,v])=>{
+  const a=document.createElement('span'), b=document.createElement('b'); a.className='counter mono'; b.textContent=v; a.append(k+' ',b); return a;
+ }));
+ byId('timeline').replaceChildren(...x.trace.map(([name,detail,state],i)=>{
+  const li=document.createElement('li'), idx=document.createElement('span'), description=document.createElement('div'), strong=document.createElement('strong'), small=document.createElement('small'), st=document.createElement('span');
+  idx.className='idx mono';idx.textContent=String(i+1).padStart(2,'0');strong.textContent=name;small.textContent=detail;description.append(strong,small);st.className='state mono';st.textContent=state;li.append(idx,description,st);return li;
+ }));
+ byId('event').textContent=JSON.stringify(fixtures[scenario],null,2);
+ byId('assertions').textContent=scenario==='valid'?'result === "registered"\nwrites === 1\nreviews === 0':scenario==='duplicate'?'result === "duplicate"\nwrites === 0\nrecordCountBefore === recordCountAfter':'result === "review"\nwrites === 0\nreviews === 1';
+}
+for(const b of buttons)b.addEventListener('click',()=>view(b.dataset.scenario));
+const theme=byId('theme'); theme.addEventListener('click',()=>{
+ const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
+ document.documentElement.dataset.theme=next;
+ theme.textContent=next==='dark'?'Light mode':'Dark mode';
+});
+view('valid');
+</script>
+</body>
+</html>
