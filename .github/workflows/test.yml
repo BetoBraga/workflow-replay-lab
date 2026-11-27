@@ -16,5 +16,5 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: node --test tests/replay.test.cjs
+          node-version: 24
+      - run: node --test
