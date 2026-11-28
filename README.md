@@ -4,7 +4,7 @@
 
 ## Run it
 
-Run `node --test tests/replay.test.cjs` to check the decision and recovery rules. For a stable browser storage origin, start `python -m http.server 8000` in the repository root and open `http://localhost:8000/`. This uses only Python's standard library and Node.js; the page only loads its same-origin static files and makes no external requests. Its only stored data is the fictional event ledger in this browser's `localStorage` for this local origin.
+Use Node.js 24 or later and run `node --test` to check the browser and SQLite exercises. For a stable browser storage origin, start `python -m http.server 8000` in the repository root and open `http://localhost:8000/`. This uses only Python's standard library and Node.js; the page only loads its same-origin static files and makes no external requests. Its only stored data is the fictional event ledger in this browser's `localStorage` for this local origin.
 
 | Case | Input | Try it | Expected | Diagnose a mismatch |
 | --- | --- | --- | --- | --- |
@@ -14,9 +14,23 @@ Run `node --test tests/replay.test.cjs` to check the decision and recovery rules
 | Unreadable PDF | `evt-104`, fixture marks parser output unreadable | Select **Unreadable PDF** | 0 writes, 1 review task; trace identifies parse failure | Distinguish parser failure from a document read successfully with insufficient evidence. |
 | Interrupted commit | `evt-105` and `evt-106`, same document revision and different event IDs | Select **Interrupt after durable write**, reload, then **Interrupted delivery replay** | First attempt is not acknowledged; retry creates no second record | The durable business key must outlive the delivery attempt. |
 
-The input is a JSON fixture, not an uploaded PDF. The lab does not implement document parsing, a review queue, an LLM, a shared database, or transactional concurrency control. `localStorage` persists across reloads in one browser profile, but it is not a production write boundary. If the saved ledger is malformed or unsupported, the lab stops and leaves it untouched rather than reporting a successful write.
+The input is a JSON fixture, not an uploaded PDF. The browser lab does not implement document parsing, a review queue, an LLM, a shared database, or transactional concurrency control. `localStorage` persists across reloads in one browser profile, but it is not a production write boundary. If the saved ledger is malformed or unsupported, the lab stops and leaves it untouched rather than reporting a successful write.
 
 To exercise failure recovery, select **Interrupt after durable write**. The lab writes a valid fictional event and then drops its acknowledgement. Reload the page and replay the event: the stored document revision should be recognized as a duplicate with no second write. **Clear local ledger** removes only this lab's local browser entry after an explicit confirmation.
+
+## Test the write boundary in SQLite
+
+The browser exercise stays static. A separate Node example, `sqlite-replay.cjs`, uses a local SQLite file and a unique key on `(document_id, revision)`. The database decides whether a valid write wins, not a preflight lookup. Inputs use fictional, canonical document IDs and positive integer revisions.
+
+```sh
+node --test tests/sqlite-replay.test.cjs
+```
+
+Two separate processes start from the same test barrier, submit different delivery IDs for the same document revision, and leave exactly one row. A new revision adds another row; missing evidence does not. In a second test, a process exits after SQLite commits but before returning an acknowledgement. A new process retries and finds the committed row without rewriting it.
+
+For an already-written revision, valid evidence with the same page and exact span is a duplicate, even with a new delivery ID. Valid evidence with a changed page or span returns a conflict and leaves the original row unchanged. The integration should not acknowledge that conflict as a successful retry. An invalid event with no prior write still goes to review.
+
+This tests a local database and process exit, not power loss, a network filesystem, or a Microsoft tenant. It does not add a persistent review queue or change the published browser exercise.
 
 ## Adapt the exercise to Copilot Studio or Power Automate
 
@@ -27,7 +41,7 @@ Use a test tenant and a disposable target. Start with a manual trigger and the t
 ## Tests
 
 ```sh
-node --test tests/replay.test.cjs
+node --test
 ```
 
 To propose an edge case, share a minimal fictional input, the desired result and why the key or evidence rule should change. A useful starting point: same document ID, new revision.
