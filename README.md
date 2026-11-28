@@ -28,6 +28,8 @@ node --test tests/sqlite-replay.test.cjs
 
 Two separate processes start from the same test barrier, submit different delivery IDs for the same document revision, and leave exactly one row. A new revision adds another row; missing evidence does not. In a second test, a process exits after SQLite commits but before returning an acknowledgement. A new process retries and finds the committed row without rewriting it.
 
+For an already-written revision, valid evidence with the same page and exact span is a duplicate, even with a new delivery ID. Valid evidence with a changed page or span returns a conflict and leaves the original row unchanged. The integration should not acknowledge that conflict as a successful retry. An invalid event with no prior write still goes to review.
+
 This tests a local database and process exit, not power loss, a network filesystem, or a Microsoft tenant. It does not add a persistent review queue or change the published browser exercise.
 
 ## Adapt the exercise to Copilot Studio or Power Automate

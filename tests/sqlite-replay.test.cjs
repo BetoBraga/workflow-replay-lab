@@ -106,3 +106,19 @@ test('process exits after commit without ACK; another process safely retries', {
     retry?.stop();
   }
 });
+
+test('a retry with changed valid evidence is a conflict and never overwrites the first row', t => {
+  const db = openLedger(database(t));
+  try {
+    assert.equal(db.deliver(fixture), 'registered');
+    const retry = { ...fixture, eventId: 'evt-retry' };
+    assert.equal(db.deliver(retry), 'duplicate');
+    assert.equal(db.deliver({ ...retry, evidence: { ...fixture.evidence, page: 3 } }), 'conflict');
+    assert.equal(db.deliver({ ...retry, evidence: { ...fixture.evidence, span: 'Changed evidence' } }), 'conflict');
+    assert.deepEqual(db.records().map(r => [r.event_id, r.page, r.span]), [
+      [fixture.eventId, fixture.evidence.page, fixture.evidence.span],
+    ]);
+  } finally {
+    db.close();
+  }
+});

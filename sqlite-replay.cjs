@@ -15,7 +15,7 @@ function openLedger(filename) {
         PRIMARY KEY (document_id, revision)
       ) STRICT;
     `);
-    const find = db.prepare('SELECT 1 FROM records WHERE document_id = ? AND revision = ?');
+    const find = db.prepare('SELECT page, span FROM records WHERE document_id = ? AND revision = ?');
     const insert = db.prepare(`
       INSERT INTO records (document_id, revision, event_id, page, span)
       VALUES (?, ?, ?, ?, ?) ON CONFLICT (document_id, revision) DO NOTHING
@@ -37,7 +37,12 @@ function openLedger(filename) {
         // This statement is its own transaction. The database, not a preflight
         // lookup, arbitrates simultaneous writes from independent processes.
         if (insert.run(documentId, revision, eventId, evidence.page, evidence.span).changes === 0) {
-          return 'duplicate';
+          // The row already exists and this adapter never mutates stored evidence.
+          const saved = find.get(documentId, revision);
+          if (!saved) throw new Error('Conflicting ledger row was not found.');
+          return saved.page === evidence.page && saved.span === evidence.span
+            ? 'duplicate'
+            : 'conflict';
         }
         afterCommit();
         return 'registered';
